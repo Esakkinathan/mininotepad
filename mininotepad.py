@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import filedialog as fd
-from tkinter import ttk
+from tkinter import ttk,font
 import pyperclip as pipe
 import os
 root=Tk()
@@ -177,6 +177,24 @@ def saveasfile(*a):
     text2save=str(t.get(0.0,END))
     name.write(text2save)
     name.close
+def font_change(fname):
+    flab.configure(font=(fname,20))
+    t.configure(font=fname)
+def fontselect():
+    global fwin
+    global flab
+
+    font_name=font.families()
+    fwin=Toplevel()
+    fwin.title("Mini Notepad")
+    fwin.geometry("500x300")
+    fwin.config(bg="black")
+    cbbox = ttk.Combobox(fwin,width=50,values=font_name)
+    cbbox.pack(side=TOP,pady=50)
+    Button(fwin,text="click",bg="black",fg="white",command= lambda:font_change(cbbox.get())).pack()
+    flab = Label(fwin,text="Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm \n Nn Oo Pp Qq Rr Ss Tt Uu Vv Xx Yy Zz",font=("console",20),bg="black",fg="white")
+    flab.pack(side=BOTTOM,pady=50)
+
 # Define Our Images
 on = PhotoImage(file = "on.png")
 off = PhotoImage(file = "off.png")
@@ -207,8 +225,10 @@ scroll1=ttk.Scrollbar(root,orient='horizontal')
 scroll2=ttk.Scrollbar(root)
 scroll1.pack(side = BOTTOM, fill = X)
 scroll2.pack(side = RIGHT, fill = Y)
+
 t=Text(root,width=700,height=500,xscrollcommand = scroll1.set,yscrollcommand = scroll2.set,undo=True)
 t.pack(side=LEFT)
+
 scroll1.config(command=t.xview)
 scroll2.config(command=t.yview)
 
@@ -220,7 +240,7 @@ emenu.add_command(label ="Undo\t\t",command=t.edit_undo)
 emenu.add_command(label ="Redo\t\t",command=t.edit_redo)
 emenu.add_checkbutton(label="Dark mode",variable=cbval,command=switch)
 emenu.add_separator()
-emenu.add_command(label ="Rename\t\t")
+emenu.add_command(label ="Font\t\t",command=fontselect)
 m = Menu(root, tearoff = 0)
 m.add_command(label ="Select All\t\t",command=select_all)
 m.add_command(label ="Cut\t\t",command=cut_select)
@@ -228,8 +248,6 @@ m.add_command(label ="Copy\t\t",command=copy_select)
 m.add_command(label ="Paste\t\t",command=paste_select)
 m.add_command(label ="Undo\t\t",command=t.edit_undo)
 m.add_command(label ="Redo\t\t",command=t.edit_redo)
-m.add_separator()
-m.add_command(label ="Rename\t\t")
   
 def do_popup(event):
     try:
