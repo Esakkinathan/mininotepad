@@ -195,13 +195,7 @@ def fontselect():
     flab = Label(fwin,text="Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm \n Nn Oo Pp Qq Rr Ss Tt Uu Vv Xx Yy Zz",font=("console",20),bg="black",fg="white")
     flab.pack(side=BOTTOM,pady=50)
 
-# Define Our Images
-on = PhotoImage(file = "on.png")
-off = PhotoImage(file = "off.png")
- 
-# Create A Button
-#on_button = Button(root, image = off, bd = 0,command = switch)
-#on_button.pack(side=TOP,pady = 5)
+
 cbval=IntVar(value=0)
 
 menubar=Menu(root, background='blue', fg='white')
