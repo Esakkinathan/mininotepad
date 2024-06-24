@@ -1,269 +1,317 @@
 from tkinter import *
-from tkinter import filedialog as fd
-from tkinter import ttk,font
+import ttkbootstrap as ttb
+from tkinter import ttk,font,messagebox as mb
 import pyperclip as pipe
 import os
-root=Tk()
-#root.attributes("-fullscreen", True)
-root.state('zoomed')
-style=ttk.Style()
-#style.theme_use('default')
-#style.configure("Vertical.TScrollbar", background="black", arrowcolor="red")
+from tkinter import filedialog as fd
+from functools import partial
 
-# file name with extension
-def on_cls():
-    try:        
-        textdata=t.get("1.0", "end-1c") 
-    except:
-        pass
-        #if(messagebox.askokcancel("mininotepad","Do you want to save?")):
-def thememode():
-    if cbval==0:
-        pass
-    else:
-        pass
-def select_all():
-    t.tag_add("sel", "1.0","end") 
-    t.tag_config("sel",background="#0000FF",foreground="white")
+file_types = [("Text files", "*.txt"), ("All files", "*.*")]
+theme_names = ['cosmo', 'flatly', 'litera', 'minty', 'lumen', 'sandstone', 'yeti', 'pulse', 'united', 'morph', 'journal', 'darkly', 'superhero', 'solar', 'cyborg', 'vapor', 'simplex', 'cerculean']
 
-def cut_select():
-    if t.selection_get():
-        da=t.selection_get() 
-        t.delete('sel.first','sel.last')
-        pipe.copy(da)
-def copy_select():
-    if t.selection_get():
-        da=t.selection_get() 
-        pipe.copy(da)
-def paste_select():
-    da=pipe.paste()
-    t.insert(END,da)
-global new_val
-new_val=1
+def fileloc(*a):
+    try :
+        loc= fd.askopenfilename(title='Open a file',filetypes=file_types)
+        return loc
+    except FileNotFoundError :
+        return None
 
-
-def newfile(*a):
-    nw=Toplevel()
-    nw.state('zoomed')
-    cbval=IntVar(value=0)
-
-    menubar=Menu(nw, background='blue', fg='white')
-    fmenu=Menu(menubar,tearoff=1)
-    emenu=Menu(menubar,tearoff=1)
-    menubar.add_cascade(label="File",menu=fmenu)
-    menubar.add_cascade(label="Edit",menu=emenu)
-    fmenu.add_command(label="New         Ctrl+N",command=newfile)
-    fmenu.add_command(label="Open        Ctrl+O",command=openfile)
-    fmenu.add_command(label="Save        Ctrl+S",command=savefile)
-    fmenu.add_command(label="Save as     Ctrl+Shift+S",command=saveasfile)
-    fmenu.add_separator()
-    fmenu.add_command(label="Close       Alt+f4",command=root.destroy)
-
-    #menubar.add_cascade(checkb,command=thememode)
-    nw.config(menu=menubar)
-
-
-
-    scroll1=ttk.Scrollbar(nw,orient='horizontal')
-    scroll2=ttk.Scrollbar(nw)
-    scroll1.pack(side = BOTTOM, fill = X)
-    scroll2.pack(side = RIGHT, fill = Y)
-    t=Text(nw,width=700,height=500,xscrollcommand = scroll1.set,yscrollcommand = scroll2.set,undo=True)
-    t.pack(side=LEFT)
-    scroll1.config(command=t.xview)
-    scroll2.config(command=t.yview)
-
-    emenu.add_command(label ="Select All\t\t",command=select_all)
-    emenu.add_command(label ="Cut\t\t",command=cut_select)
-    emenu.add_command(label ="Copy\t\t",command=copy_select)
-    emenu.add_command(label ="Paste\t\t",command=paste_select)
-    emenu.add_command(label ="Undo\t\t",command=t.edit_undo)
-    emenu.add_command(label ="Redo\t\t",command=t.edit_redo)
-    emenu.add_checkbutton(label="Dark mode",variable=cbval,command=switch)
-    emenu.add_separator()
-    emenu.add_command(label ="Rename\t\t")
-    """m = Menu(root, tearoff = 0)
-    m.add_command(label ="Select All\t\t",command=select_all)
-    m.add_command(label ="Cut\t\t",command=cut_select)
-    m.add_command(label ="Copy\t\t",command=copy_select)
-    m.add_command(label ="Paste\t\t",command=paste_select)
-    m.add_command(label ="Undo\t\t",command=t.edit_undo)
-    m.add_command(label ="Redo\t\t",command=t.edit_redo)
-    m.add_separator()
-    m.add_command(label ="Rename\t\t")
-    
-    def do_popup(event):
-        try:
-            m.tk_popup(event.x_root, event.y_root)
-        finally:
-            m.grab_release()
-    """
-    #root.protocol("WM_DELETE_WINDOW",on_cls) 
-    t.bind("<Control-o>",openfile)
-    t.bind("<Control-n>",newfile)
-    t.bind("<Control-O>",openfile)
-    t.bind("<Control-N>",newfile)
-    t.bind("<Control-s>",savefile)
-    t.bind("<Control-S>",savefile)
-    t.bind("<Control--Shift-s>",saveasfile)
-    t.bind("<Control-Shift-S>",saveasfile)
-    t.bind("<Control-f>",search)
-    t.bind("<Button-3>", do_popup)
+class MyRootWindow:
+    def __init__(self,root):
         
+        self.file = None
+        self.data = None
+        text_font = font.Font(family="Consolas", size=14)
+       
+        self.root = root
+        self.root.state('zoomed')
+        width_win = root.winfo_screenwidth()
+        height_win = root.winfo_screenheight()
+        geometry = f"{width_win}x{height_win}+0+0"
+        self.root.geometry(geometry)
+        self.root.title('newfile')
+        self.style = ttb.Style('cyborg')
+        scroll1=ttk.Scrollbar(self.root,orient='horizontal')
+        scroll2=ttk.Scrollbar(self.root)
+        scroll1.pack(side = BOTTOM, fill = X)
+        scroll2.pack(side = RIGHT, fill = Y)
+
+        self.text_field = Text(self.root, wrap='word',undo=True,xscrollcommand = scroll1.set,yscrollcommand = scroll2.set,font=text_font)
+        self.text_field.pack(expand=True, fill='both')
+        scroll1.config(command=self.text_field.xview)
+        scroll2.config(command=self.text_field.yview)
+
+        self.menubar=Menu(self.root)
+        self.fmenu=Menu(self.menubar,tearoff=1)
+        self.emenu=Menu(self.menubar,tearoff=1)
+        self.tmenu=Menu(self.menubar,tearoff=1)
+        self.menubar.add_cascade(label="File",menu=self.fmenu)
+        self.menubar.add_cascade(label="Edit",menu=self.emenu)
+        self.menubar.add_cascade(label="Select Theme",menu=self.tmenu)
+        self.fmenu.add_command(label="New         Ctrl+N",command=self.new_window)
+        self.fmenu.add_command(label="Open        Ctrl+O",command=self.open_window)
+        self.fmenu.add_command(label="Save        Ctrl+S",command=self.savefile)
+        self.fmenu.add_command(label="Save as     Ctrl+Shift+S",command=self.saveasfile)
+        self.fmenu.add_separator()
+        self.fmenu.add_command(label="Close       Alt+f4",command = self.on_cls)
+        self.emenu.add_command(label ="Select All\t\t")
+        self.emenu.add_command(label ="Cut\t\t")
+        self.emenu.add_command(label ="Copy\t\t")
+        self.emenu.add_command(label ="Paste\t\t")
+        self.emenu.add_command(label ="Undo\t\t")
+        self.emenu.add_command(label ="Redo\t\t")
+        self.emenu.add_checkbutton(label="Dark mode")
+        self.emenu.add_separator()
+        self.emenu.add_command(label ="Font\t\t")
+        self.selected_theme = StringVar()
+        self.selected_theme.set('cyborg')
+        for theme in theme_names:
+            self.tmenu.add_radiobutton(label=theme,variable=self.selected_theme,value=theme,command=partial(self.set_theme, theme))
+        
+        self.root.config(menu=self.menubar)
+        
+        self.pop_menu = Menu(root, tearoff = 0)
+        self.pop_menu.add_command(label ="Select All\t\t",command=self.select_all)
+        self.pop_menu.add_command(label ="Cut\t\t",command=self.cut_select)
+        self.pop_menu.add_command(label ="Copy\t\t",command=self.copy_select)
+        self.pop_menu.add_command(label ="Paste\t\t",command=self.paste_select)
+        self.pop_menu.add_command(label ="Undo\t\t",command=self.text_field.edit_undo)
+        self.pop_menu.add_command(label ="Redo\t\t",command=self.text_field.edit_redo)
+      
+        self.text_field.bind("<Control-o>",self.open_window)
+        self.text_field.bind("<Control-n>",self.new_window)
+        self.text_field.bind("<Control-O>",self.open_window)
+        self.text_field.bind("<Control-N>",self.new_window)
+        self.text_field.bind("<Control-s>",self.savefile)
+        self.text_field.bind("<Control-S>",self.savefile)
+        self.text_field.bind("<Control--Shift-s>",self.saveasfile)
+        self.text_field.bind("<Control-Shift-S>",self.saveasfile)
+        self.text_field.bind("<Button-3>", self.do_popup)
+        self.root.protocol("WM_DELETE_WINDOW",self.on_cls)
+           
+    def select_all(self):
+        self.text_field.tag_add("sel", "1.0","end") 
+        self.text_field.tag_config("sel")
+    def cut_select(self):
+        if self.text_field.selection_get():
+            da=self.text_field.selection_get() 
+            self.text_field.delete('sel.first','sel.last')
+            pipe.copy(da)
     
-    
-    
-def search(a):
-    new=Toplevel()
-    new.geometry('300x300')
-    v=StringVar()
-    E=Entry(new,textvariable=v)
-    E.pack()
-    b=Button(new,text='click',command=lambda:searchval(v.get()))
-    b.pack(side=BOTTOM)
-    def searchval(i):
-        dat=t.get("1.0", "end-1c") 
-        if i in dat:
-            print("Found")
-            print(dat.index(i))
+    def copy_select(self):
+        if self.text_field.selection_get():
+            da=self.text_field.selection_get() 
+            pipe.copy(da)
+    def paste_select(self):
+        da=pipe.paste()
+        self.text_field.insert(END,da)
+    def new_window(self,*a):
+        self.child_window = ttb.Toplevel()
+        self.window = MyChildWindow(self.child_window)
+    def open_window(self,*a):
+        if self.file is  None:
+            self.loc =  fileloc()
+            if self.loc is not None:
+                self.file_title = os.path.basename(self.loc)
+                self.file = open(self.loc,'r+')
+                self.text_field.delete('1.0', END)
+                self.data = self.file.read()
+                self.text_field.insert('1.0',self.data)
+                self.root.title(self.file_title)
         else:
-            print("Not Found") 
-def fileloc():
-    global loc
-    filetypes = [("Text Files", "*.txt"),('All files', '*.*')]
-    loc= fd.askopenfilename(title='Open a file',filetypes=filetypes)
-    #print(d)
-    return loc
-def openfile(*a):
-    loc=fileloc()
-    f=open(loc,"r")
-    #print("opened")
-    data=f.read()
-    #print(data)
-    f.close()
-    t.insert('1.0',data)
-    title_win()
-is_on=False
-def switch():
-    if(cbval.get()==1):
-       #on_button.config(image = on)
-        root.config(bg='black')
-        t.config(bg="black",fg='white',insertbackground="white")
-        #scroll1.configure(bg="#454545")
-        #scroll2.configure(bg="#454545")
-        fmenu.config(bg="black",fg='white')
-        fmenu.config(bg="black",fg='white') 
+            self.file.close()
+            self.loc = self.myFunctions.fileloc()
+            if self.loc is not None:
+                self.file_title = os.path.basename(self.loc)
+                self.file = open(self.loc,'r+')
+                self.text_field.delete('1.0', END)
+                self.text_field.insert('1.0',self.file.read())
+                self.root.title(self.file_title)
+            
+    def saveasfile(self,*a):
+        self.name=fd.asksaveasfile(mode='w',defaultextension=".txt",filetypes=file_types)
+        text2save=str(self.text_field.get(0.0,END))
+        self.name.write(text2save)
+        self.name.close()
+    def savefile(self,*a):
+        if self.file is not None:
+            self.file.seek(0)
+            self.file.truncate()
+            self.file.write(self.text_field.get("1.0", "end-1c"))
+            self.data=self.text_field.get("1.0", "end-1c")
+        else:
+            self.saveasfile()
+    def do_popup(self,event):
+        try:
+            self.pop_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.pop_menu.grab_release()
+    def set_theme(self,val):
+        print(val)
+        self.style.theme_use(val) 
+    def on_cls(self,*a):
+        if len(self.text_field.get("1.0", "end-1c")) != 0 :
+            if self.data is not None:
+                if self.text_field.get("1.0", "end-1c") != self.data :         
+                    if mb.askyesno("Quit",'Do you want to save?') :
+                        self.savefile()
+                        self.file.close()
+                        self.root.destroy()
+                    else:
+                        self.root.destroy()
+                else:
+                    self.root.destroy()
+            else:
+                print('here')
+                if mb.askyesno("Quit",'Do you want to save?') :
+                    self.savefile()
+                    self.root.destroy()
+                else:
+                    self.root.destroy()
+        else:
+            self.root.destroy()                  
         
-    else:
-        #on_button.config(image = off)
-        root.config(bg='white')
-        t.config(bg="white",fg='black',insertbackground="black")
-        #scroll1.configure(bg="white")
-        #scroll1.configure(bg="white")
-        fmenu.config(bg="white",fg='black')
-        fmenu.config(bg="white",fg='black')
+class MyChildWindow(MyRootWindow):
+    def __init__(self,window):
+        text_font = font.Font(family="Consolas", size=14)
+        self.file = None 
+        self.data = None       
+        self.window = window
+        self.window.state('zoomed')
+        width_win = window.winfo_screenwidth()
+        height_win = window.winfo_screenheight()
+        geometry = f"{width_win}x{height_win}+0+0"
+        self.window.geometry(geometry)
+        self.window.title('newfile')
+        self.style = ttb.Style('cyborg')
+        scroll1=ttk.Scrollbar(self.window,orient='horizontal')
+        scroll2=ttk.Scrollbar(self.window)
+        scroll1.pack(side = BOTTOM, fill = X)
+        scroll2.pack(side = RIGHT, fill = Y)
+
+        self.text_field = Text(self.window, wrap='word',undo=True,xscrollcommand = scroll1.set,yscrollcommand = scroll2.set,font=text_font)
+        self.text_field.pack(expand=True, fill='both')
+        scroll1.config(command=self.text_field.xview)
+        scroll2.config(command=self.text_field.yview)
         
-def savefile(*a): 
-    dat=t.get("1.0", "end-1c") 
-    try:
+        self.menubar=Menu(self.window)
+        self.fmenu=Menu(self.menubar,tearoff=1)
+        self.emenu=Menu(self.menubar,tearoff=1)
+        self.tmenu=Menu(self.menubar,tearoff=1)
+        self.menubar.add_cascade(label="File",menu=self.fmenu)
+        self.menubar.add_cascade(label="Edit",menu=self.emenu)
+        self.menubar.add_cascade(label="Select Theme",menu=self.tmenu)
+        self.fmenu.add_command(label="New         Ctrl+N",command=self.new_window)
+        self.fmenu.add_command(label="Open        Ctrl+O",command=self.open_window)
+        self.fmenu.add_command(label="Save        Ctrl+S",command=self.savefile)
+        self.fmenu.add_command(label="Save as     Ctrl+Shift+S",command=self.saveasfile)
+        self.fmenu.add_separator()
+        self.fmenu.add_command(label="Close       Alt+f4",command = self.on_cls)
+        self.emenu.add_command(label ="Select All\t\t")
+        self.emenu.add_command(label ="Cut\t\t")
+        self.emenu.add_command(label ="Copy\t\t")
+        self.emenu.add_command(label ="Paste\t\t")
+        self.emenu.add_command(label ="Undo\t\t")
+        self.emenu.add_command(label ="Redo\t\t")
+        self.emenu.add_checkbutton(label="Dark mode")
+        self.emenu.add_separator()
+        self.emenu.add_command(label ="Font\t\t")
+        self.selected_theme = StringVar()
+        self.selected_theme.set('cyborg')
+        for theme in theme_names:
+            self.tmenu.add_radiobutton(label=theme,variable=self.selected_theme,value=theme,command=partial(self.set_theme, theme))
         
-        f=open(loc,"w")
-        f.write(dat)
-        f.close()
-    except NameError:
-        saveasfile()
-def saveasfile(*a):
-    name=fd.asksaveasfile(mode='w',defaultextension=".txt")
-    text2save=str(t.get(0.0,END))
-    name.write(text2save)
-    name.close
-def font_change(fname):
-    flab.configure(font=(fname,20))
-    t.configure(font=fname)
-def fontselect():
-    global fwin
-    global flab
+        self.window.config(menu=self.menubar)
+        
+        self.pop_menu = Menu(window, tearoff = 0)
+        self.pop_menu.add_command(label ="Select All\t\t",command=self.select_all)
+        self.pop_menu.add_command(label ="Cut\t\t",command=self.cut_select)
+        self.pop_menu.add_command(label ="Copy\t\t",command=self.copy_select)
+        self.pop_menu.add_command(label ="Paste\t\t",command=self.paste_select)
+        self.pop_menu.add_command(label ="Undo\t\t",command=self.text_field.edit_undo)
+        self.pop_menu.add_command(label ="Redo\t\t",command=self.text_field.edit_redo)
+        
+        self.text_field.bind("<Control-o>",self.open_window)
+        self.text_field.bind("<Control-n>",self.new_window)
+        self.text_field.bind("<Control-O>",self.open_window)
+        self.text_field.bind("<Control-N>",self.new_window)
+        self.text_field.bind("<Control-s>",self.savefile)
+        self.text_field.bind("<Control-S>",self.savefile)
+        self.text_field.bind("<Control--Shift-s>",self.saveasfile)
+        self.text_field.bind("<Control-Shift-S>",self.saveasfile)
+        self.text_field.bind("<Button-3>", self.do_popup)
+        self.window.protocol("WM_DELETE_WINDOW",self.on_cls)
+           
+    def select_all(self):
+        self.text_field.tag_add("sel", "1.0","end") 
+        self.text_field.tag_config("sel")
+    def cut_select(self):
+        if self.text_field.selection_get():
+            da=self.text_field.selection_get() 
+            self.text_field.delete('sel.first','sel.last')
+            pipe.copy(da)
+    
+    def copy_select(self):
+        if self.text_field.selection_get():
+            da=self.text_field.selection_get() 
+            pipe.copy(da)
+    def paste_select(self):
+        da=pipe.paste()
+        self.text_field.insert(END,da)
+    def new_window(self):
+        self.child_window = ttb.Toplevel()
+        self.window = MyChildWindow(self.child_window)
+    def open_window(self):
+        self.loc = fileloc()
+        self.file_title = os.path.basename(self.loc)
+        self.file = open(self.loc,'r+')
+        self.text_field.delete('1.0', END)
+        self.data = self.file.read()
+        self.text_field.insert('1.0',self.data)
+        self.window.title(self.file_title)
+    def saveasfile(self):
+        self.name=fd.asksaveasfile(mode='w',defaultextension=".txt",filetypes=file_types)
+        text2save=str(self.text_field.get(0.0,END))
+        self.name.write(text2save)
+        self.name.close()
+    def savefile(self):
+        if self.file is not None:
+            self.file.seek(0)
+            self.file.truncate()
+            self.file.write(self.text_field.get("1.0", "end-1c"))
+            self.data=self.text_field.get("1.0", "end-1c")
+        else:
+            self.saveasfile()
+    def do_popup(self,event):
+        try:
+            self.pop_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.pop_menu.grab_release()
+    def set_theme(self,val):
+        print(val)
+        self.style.theme_use(val)
+    
+    def on_cls(self,*a):
+        if len(self.text_field.get("1.0", "end-1c")) != 0 :
+            if self.data is not None:
+                if self.text_field.get("1.0", "end-1c")!=self.data :         
+                    if mb.askyesno("Quit",'Do you want to save?') :
+                        self.savefile()
+                        self.window.destroy()
+                    else:
+                        self.window.destroy()
+                else:
+                    self.window.destroy()
+            else:
+                if mb.askyesno("Quit",'Do you want to save?') :
+                    self.savefile()
+                    self.window.destroy()
+                else:
+                    self.window.destroy()
+        else:
+            self.window.destroy()
 
-    font_name=font.families()
-    fwin=Toplevel()
-    fwin.title("Mini Notepad")
-    fwin.geometry("500x300")
-    fwin.config(bg="black")
-    cbbox = ttk.Combobox(fwin,width=50,values=font_name)
-    cbbox.pack(side=TOP,pady=50)
-    Button(fwin,text="click",bg="black",fg="white",command= lambda:font_change(cbbox.get())).pack()
-    flab = Label(fwin,text="Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm \n Nn Oo Pp Qq Rr Ss Tt Uu Vv Xx Yy Zz",font=("console",20),bg="black",fg="white")
-    flab.pack(side=BOTTOM,pady=50)
+root_window = ttb.Window(themename="cyborg")
+root = MyRootWindow(root_window)
 
-
-cbval=IntVar(value=0)
-
-menubar=Menu(root, background='blue', fg='white')
-fmenu=Menu(menubar,tearoff=1)
-emenu=Menu(menubar,tearoff=1)
-menubar.add_cascade(label="File",menu=fmenu)
-menubar.add_cascade(label="Edit",menu=emenu)
-fmenu.add_command(label="New         Ctrl+N",command=newfile)
-fmenu.add_command(label="Open        Ctrl+O",command=openfile)
-fmenu.add_command(label="Save        Ctrl+S",command=savefile)
-fmenu.add_command(label="Save as     Ctrl+Shift+S",command=saveasfile)
-fmenu.add_separator()
-fmenu.add_command(label="Close       Alt+f4",command=root.destroy)
-
-#menubar.add_cascade(checkb,command=thememode)
-root.config(menu=menubar)
-
-
-
-scroll1=ttk.Scrollbar(root,orient='horizontal')
-scroll2=ttk.Scrollbar(root)
-scroll1.pack(side = BOTTOM, fill = X)
-scroll2.pack(side = RIGHT, fill = Y)
-
-t=Text(root,width=700,height=500,xscrollcommand = scroll1.set,yscrollcommand = scroll2.set,undo=True)
-t.pack(side=LEFT)
-
-scroll1.config(command=t.xview)
-scroll2.config(command=t.yview)
-
-emenu.add_command(label ="Select All\t\t",command=select_all)
-emenu.add_command(label ="Cut\t\t",command=cut_select)
-emenu.add_command(label ="Copy\t\t",command=copy_select)
-emenu.add_command(label ="Paste\t\t",command=paste_select)
-emenu.add_command(label ="Undo\t\t",command=t.edit_undo)
-emenu.add_command(label ="Redo\t\t",command=t.edit_redo)
-emenu.add_checkbutton(label="Dark mode",variable=cbval,command=switch)
-emenu.add_separator()
-emenu.add_command(label ="Font\t\t",command=fontselect)
-m = Menu(root, tearoff = 0)
-m.add_command(label ="Select All\t\t",command=select_all)
-m.add_command(label ="Cut\t\t",command=cut_select)
-m.add_command(label ="Copy\t\t",command=copy_select)
-m.add_command(label ="Paste\t\t",command=paste_select)
-m.add_command(label ="Undo\t\t",command=t.edit_undo)
-m.add_command(label ="Redo\t\t",command=t.edit_redo)
-  
-def do_popup(event):
-    try:
-        m.tk_popup(event.x_root, event.y_root)
-    finally:
-        m.grab_release()
-def title_win():
-    try:
-        file_name = os.path.basename(loc)
-        root.title(file_name)
-    except NameError:
-        root.title("newfile")
-title_win()
-#root.protocol("WM_DELETE_WINDOW",on_cls) 
-t.bind("<Control-o>",openfile)
-t.bind("<Control-n>",newfile)
-t.bind("<Control-O>",openfile)
-t.bind("<Control-N>",newfile)
-t.bind("<Control-s>",savefile)
-t.bind("<Control-S>",savefile)
-t.bind("<Control--Shift-s>",saveasfile)
-t.bind("<Control-Shift-S>",saveasfile)
-t.bind("<Control-f>",search)
-t.bind("<Button-3>", do_popup)
-root.mainloop()
+mainloop()
